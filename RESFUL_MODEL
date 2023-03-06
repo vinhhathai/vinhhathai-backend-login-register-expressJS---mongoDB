@@ -1,0 +1,67 @@
+const { response } = require("express");
+const express = require("express");
+const router = express.Router();
+
+const accountModel = require("../models/accountModel");
+
+
+/////////////////CHUAN RESFUL API
+router.get("/", function (req, res, next) {
+  accountModel
+    .find({})
+    .then((data) => {
+      res.send(data);
+    })
+    .catch((err) => {
+      res.status(500).send("Error!");
+    });
+});
+
+router.post("/", function (req, res, next) {
+  const password = req.body.password;
+  const username = req.body.username;
+  accountModel
+    .create({
+      username: username,
+      password: password,
+    })
+    .then((data) => {
+      res.send("Tao tai khoan thanh cong!");
+    })
+    .catch((err) => {
+      res.status(500).send("Error!!!");
+    });
+});
+
+router.put("/:id", function (req, res, next) {
+  const newPassword = req.body.password;
+  const id = req.params.id;
+  accountModel
+    .findByIdAndUpdate(id, {
+      password: newPassword,
+    })
+    .then((data) => {
+      res.send("Update thanh cong!!!");
+    })
+    .catch((err) => {
+      res.status(500).send("That bai!");
+    });
+});
+
+router.delete("/:id", function (req, res, next) {
+  const id = req.params.id;
+  accountModel
+    .deleteOne({
+      _id: id,
+    })
+    .then((data) => {
+      res.send("Xoa thanh cong!!!");
+    })
+    .catch((err) => {
+      res.status(500).send("That bai!");
+    });
+});
+
+// Add more routes here, as needed.
+
+module.exports = router;
