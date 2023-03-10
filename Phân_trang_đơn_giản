@@ -1,0 +1,177 @@
+// SEVER.JS
+// Tạo giao diện số lượngtrang
+// thực hiện chức năng phân trang : mỗi trang sẽ chứa 2 khối dữ liệu, click sang trang khác thì
+// hiển thị tiếp 2 dữ liệu mới
+// Thực hiện: kết nối csdl
+// xử lí dữ liệu và trả về cho client
+const express = require("express");
+const app = express();
+const port = 3000;
+const router = require("../Backend/routes/routers");
+const path = require("path");
+app.use("/public", express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "views")));
+app.use("/", router);
+
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`);
+});
+//---------------------------------------------------------------------------------------------------------------
+//ROUTER.JS
+const express = require("express");
+const router = express.Router();
+const accountModel = require("../models/accountModel");
+const path = require("path");
+
+router.get("/user", (req, res) => {
+  const page = req.query.page;
+  const PAGE_SIZE = 2;
+  let skipData = page * PAGE_SIZE - 2;
+  let totalPage = 0;
+  accountModel
+    .find({})
+    .skip(skipData)
+    .limit(PAGE_SIZE)
+    .then((data) => {
+      accountModel.collection.countDocuments({}).then((total) => {
+        totalPage = total;
+        res.send({
+          data: data,
+          totalPage: Math.floor(totalPage / PAGE_SIZE),
+        });
+      });
+    })
+    .catch(() => {
+      res.send("Loi!");
+    });
+});
+router.get("/", (req, res) => {
+  res.sendFile("index.html");
+});
+
+module.exports = router;
+//-----------------------------------------------------------------------------------------------------
+//getData.js => Xử lí phân trang
+// function loadingPage(page) {
+//   fetch(`http://localhost:3000/user/?page=${page}`)
+//     .then((res) => res.json())
+//     .then((res) => {
+//       let htmlString = "";
+//       res.data.forEach((item) => {
+//         console.log(item.username);
+//         htmlString += `<p>${item.username}</p>`;
+//       });
+//       const htmlTag = document.querySelector(".content");
+//       htmlTag.innerHTML = htmlString;
+//     })
+//     .catch(() => {
+//       console.log("Lấy API thất bại!");
+//     });
+// }
+$(".content").pagination({
+  dataSource: function (done) {
+    $.ajax({
+      type: "GET",
+      url: "http://localhost:3000/user/",
+      success: function (response) {
+        var result = [];
+        for (i = 1; i <= response.totalPage; i++) {
+          result.push(i);
+        }
+        done(result);
+      },
+    });
+  },
+  pageSize: 2,
+  showPrevious: true,
+  showNext: true,
+  afterPageOnClick: function (event, pageNumber) {
+    loadingPage(pageNumber);
+  },
+});
+function loadingPage(page) {
+  fetch(`http://localhost:3000/user/?page=${page}`)
+    .then((res) => res.json())
+    .then((res) => {
+      var html = "";
+      res.data.map((item) => {
+        html = `<p>${item.username} - ${item.password}</p>`;
+        $(".content").append(html);
+      });
+    })
+    .catch(() => {
+      console.log("Loi o day!");
+    });
+}
+loadingPage(1)
+//----------------------------------------------------------------------------------
+//index.html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="../public//stylesheets/style.css" />
+    <link
+      rel="stylesheet"
+      href="../public/boostrap/bootstrap-5.3.0-alpha1-dist/css/bootstrap.css"
+    />
+  </head>
+  <body>
+    <!-- <nav aria-label="...">
+      <ul class="pagination">
+        <li class="page-item disabled">
+          <a class="page-link" href="#" tabindex="-1">Previous</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="#" onclick="loadingPage(1)">1</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="#" onclick="loadingPage(2)">2</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="#" onclick="loadingPage(3)">3</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="#">Next</a>
+        </li>
+      </ul>
+    </nav> -->
+    <ul class="content"></ul>
+  </body>
+  <script src="../public/javascripts/jquery-3.6.4.min.js"></script>
+  <script src="../public//javascripts/pagination.js"></script>
+  <script src="../public/javascripts/getData.js"></script>
+</html>
+//-------------------------------------------------------------------------------------
+//css style.css
+body {
+  padding: 50px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: #00b7ff;
+}
+.content,
+.item {
+  text-decoration: none;
+  list-style: none;
+}
+.paginationjs-prev,
+.paginationjs-page,
+.paginationjs-next,
+.paginationjs-ellipsis {
+  display: inline-block;
+  padding: 8px;
+  border: 1px solid black;
+  cursor: pointer;
+}
+.paginationjs-next:hover,
+.paginationjs-prev:hover,
+.J-paginationjs-page:hover {
+  background-color: black;
+  color: white;
+}
